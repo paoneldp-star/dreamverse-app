@@ -1,0 +1,445 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<meta name="theme-color" content="#070b18">
+<title>DREAMVERSE — Crée ton univers</title>
+<!-- Chargement du moteur 3D Three.js -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<style>
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+:root{--bg:#070b18;--panel:#10182c;--panel2:#151f38;--text:#eef4ff;--muted:#94a3c4;--accent:#7c5cff;--accent2:#22d3ee;--line:#263250}
+html,body{margin:0;min-height:100%;font-family:Arial,Helvetica,sans-serif;background:radial-gradient(circle at 50% -10%,#26336b 0,#0d1430 35%,var(--bg) 70%);color:var(--text)}
+body{overflow-x:hidden}
+button,input,textarea{font:inherit}
+button{border:0;cursor:pointer;color:var(--text)}
+.app{max-width:1100px;margin:auto;padding:18px}
+header{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:18px}
+.logo{font-size:25px;font-weight:900;letter-spacing:2px}
+.logo span{color:var(--accent2)}
+.coins{background:#121b31;border:1px solid var(--line);padding:10px 14px;border-radius:20px;color:#ffe082;font-weight:bold}
+.hero{position:relative;overflow:hidden;border:1px solid var(--line);border-radius:28px;padding:34px 22px;text-align:center;background:linear-gradient(145deg,#131c38,#0b1022)}
+.hero:before,.hero:after{content:"";position:absolute;border-radius:50%;filter:blur(3px);opacity:.55}
+.hero:before{width:180px;height:180px;background:#7c5cff;left:-60px;top:-80px}
+.hero:after{width:160px;height:160px;background:#22d3ee;right:-60px;bottom:-90px}
+.hero>*{position:relative;z-index:1}
+h1{font-size:clamp(38px,8vw,72px);margin:10px 0;background:linear-gradient(90deg,#fff,#8eeeff,#a991ff);-webkit-background-clip:text;color:transparent}
+.hero p{max-width:650px;margin:0 auto 22px;color:var(--muted);font-size:17px;line-height:1.5}
+.primary{background:linear-gradient(90deg,#7c5cff,#4f8cff);padding:14px 22px;border-radius:14px;font-weight:900;box-shadow:0 10px 30px #0006}
+.secondary{background:#18223b;border:1px solid var(--line);padding:12px 17px;border-radius:12px;font-weight:bold}
+nav{display:flex;gap:8px;overflow:auto;margin:18px 0}
+nav button{white-space:nowrap;background:#10182c;border:1px solid var(--line);padding:11px 15px;border-radius:12px}
+nav button.active{background:#6b51dd;border-color:#8b78ff}
+.view{display:none}.view.active{display:block}
+.card{background:rgba(16,24,44,.9);border:1px solid var(--line);border-radius:20px;padding:18px;margin-bottom:15px}
+h2{margin:0 0 14px;font-size:22px}
+label{display:block;color:#b9c5df;margin:12px 0 7px;font-weight:bold}
+input,textarea,select{width:100%;background:#080e1d;color:var(--text);border:1px solid var(--line);border-radius:12px;padding:13px;outline:none}
+textarea{min-height:120px;resize:vertical}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px}
+.choice{padding:14px;border:1px solid var(--line);border-radius:14px;background:#0b1224;text-align:left;width:100%}
+.choice.selected{border-color:#8b78ff;background:#1c2044;box-shadow:0 0 0 1px #8b78ff}
+.choice b{display:block;margin-bottom:5px}.choice small{color:var(--muted)}
+.worlds{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px}
+.world{min-height:170px;border-radius:18px;padding:18px;display:flex;flex-direction:column;justify-content:space-between;border:1px solid var(--line);background:linear-gradient(145deg,#18275a,#11182c)}
+.world:nth-child(2){background:linear-gradient(145deg,#431f50,#111426)}
+.world:nth-child(3){background:linear-gradient(145deg,#174b55,#101a2b)}
+.world:nth-child(4){background:linear-gradient(145deg,#4c3219,#171321)}
+.world .emoji{font-size:42px}.world h3{margin:7px 0}.world p{margin:0 0 10px;color:#b4bfd7;font-size:13px}
+.actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:15px}
+#gameWrap{display:none}
+.game{position:relative;width:min(100%,800px);height:600px;margin:auto;border:1px solid #334166;border-radius:24px;overflow:hidden;background:#050914}
+canvas{display:block;width:100%;height:100%}
+.gameUI{position:absolute;top:12px;left:12px;right:12px;display:flex;flex-direction:column;gap:8px;pointer-events:none;z-index:10}
+.ui-row{display:flex;justify-content:space-between;width:100%}
+.badge{background:#071020cc;border:1px solid #526084;padding:8px 11px;border-radius:12px;font-weight:bold}
+.mission-box{background:#071020f0;border:1px solid var(--accent);border-radius:12px;padding:10px;font-size:13px;max-width:280px;pointer-events:auto;line-height:1.4}
+.joystick{position:absolute;bottom:20px;left:20px;width:115px;height:115px;border-radius:50%;background:#ffffff14;border:1px solid #ffffff25;touch-action:none;z-index:10}
+.stick{position:absolute;width:55px;height:55px;border-radius:50%;background:#ffffff32;left:29px;top:29px;pointer-events:none}
+.gameBtns{position:absolute;right:20px;bottom:25px;display:flex;gap:10px;z-index:10}
+.gameBtns button{width:58px;height:58px;border-radius:50%;background:#ffffff18;border:1px solid #ffffff25;font-size:24px;pointer-events:auto}
+.hint{text-align:center;color:var(--muted);font-size:13px;margin-top:10px}
+footer{text-align:center;color:#66738f;padding:22px}
+@media(max-width:600px){.app{padding:11px}.hero{padding:27px 15px}.card{padding:14px}.game{height:500px}}
+</style>
+</head>
+<body>
+<div class="app">
+<header>
+  <div class="logo">DREAM<span>VERSE</span> ✦</div>
+  <div class="coins">✦ <span id="coins">0</span></div>
+</header>
+
+<section id="heroBlock" class="hero">
+  <div>🌌 UN NOUVEL UNIVERS T'ATTEND</div>
+  <h1>Imagine.<br>Crée. Explore.</h1>
+  <p>Transforme une idée en monde interactif. Choisis ton ambiance, donne un nom à ton univers et pars l'explorer.</p>
+  <button class="primary" onclick="showView('create')">✨ CRÉER MON MONDE</button>
+</section>
+
+<nav>
+  <button class="active" data-view="home" onclick="showView('home')">🏠 Accueil</button>
+  <button data-view="create" onclick="showView('create')">✨ Créer</button>
+  <button data-view="explore" onclick="showView('explore')">🌍 Explorer</button>
+  <button data-view="game" onclick="showView('game')">🎮 Jouer</button>
+</nav>
+
+<section id="home" class="view active">
+  <div class="card">
+    <h2>🌟 Bienvenue dans DREAMVERSE</h2>
+    <p style="color:var(--muted);line-height:1.5">Commence par créer ton premier univers. Tes créations sont sauvegardées directement dans cette première version.</p>
+    <div class="actions"><button class="primary" onclick="showView('create')">Créer maintenant</button><button class="secondary" onclick="showView('explore')">Explorer les mondes</button></div>
+  </div>
+  <div class="card">
+    <h2>🚀 Feuille de route</h2>
+    <div class="grid">
+      <div class="choice selected"><b>✅ Version 1 & 2</b><small>3D Réelle, Véhicules, Citoyens & Missions.</small></div>
+      <div class="choice"><b>🔒 Version 3</b><small>Comptes et mondes en ligne.</small></div>
+      <div class="choice"><b>🔒 Version 4</b><small>IA, événements et multijoueur.</small></div>
+    </div>
+  </div>
+</section>
+
+<section id="create" class="view">
+  <div class="card">
+    <h2>✨ Crée ton univers</h2>
+    <label>Nom du monde</label>
+    <input id="worldName" placeholder="Ex : Royaume de Paonel" maxlength="32">
+    <label>Décris ton monde</label>
+    <textarea id="worldDesc" placeholder="Ex : Une ville abandonnée sous une lune rouge..."></textarea>
+    
+    <label>Style</label>
+    <div class="grid" id="styles">
+      <button class="choice selected" data-value="Fantastique" onclick="selectChoice(this,'styles')"><b>🏰 Fantastique</b><small>Châteaux, magie et créatures.</small></button>
+      <button class="choice" data-value="Cyberpunk" onclick="selectChoice(this,'styles')"><b>🤖 Cyberpunk</b><small>Néons, mégalopoles et robots.</small></button>
+      <button class="choice" data-value="Spatial" onclick="selectChoice(this,'styles')"><b>🚀 Spatial</b><small>Planètes, étoiles et stations.</small></button>
+      <button class="choice" data-value="Horreur" onclick="selectChoice(this,'styles')"><b>👻 Horreur</b><small>Brume, maisons hantées et mystères.</small></button>
+    </div>
+    
+    <label>Ambiance</label>
+    <div class="grid" id="moods">
+      <button class="choice selected" data-value="Nuit" onclick="selectChoice(this,'moods')"><b>🌙 Nuit</b><small>Étoiles et mystère.</small></button>
+      <button class="choice" data-value="Jour" onclick="selectChoice(this,'moods')"><b>☀️ Jour</b><small>Lumière et aventure.</small></button>
+    </div>
+    
+    <div class="actions" style="margin-top:20px">
+      <button class="primary" onclick="createWorld()">✨ BÂTIR LE MONDE 3D</button>
+    </div>
+  </div>
+</section>
+
+<section id="explore" class="view">
+  <h2>🌍 Univers prêts à l'exploration</h2>
+  <div class="worlds" id="worldsList"></div>
+</section>
+
+<section id="game" class="view">
+  <div id="gamePrompt" class="card" style="text-align:center; padding:40px 20px">
+    <h2>🎮 Aucun monde chargé</h2>
+    <p>Sélectionne ou crée une carte urbaine depuis l'onglet Explorer.</p>
+    <button class="primary" onclick="showView('explore')">Aller à l'exploration</button>
+  </div>
+  
+  <div id="gameWrap">
+    <div class="game">
+      <canvas id="gameCanvas"></canvas>
+      <div class="gameUI">
+        <div class="ui-row">
+          <div class="badge" id="gameWorldName">Pong Game</div>
+          <div class="badge" style="color:#ffe082">Score: <span id="gameScore">0</span></div>
+        </div>
+        <div class="mission-box" id="missionPanel">
+          <b>📋 Commandes:</b><br>
+          <span id="missionText">Souris: Bouger la raquette gauche | Flèches haut/bas: Raquette gauche</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>© 2024 DREAMVERSE - Crée ton univers | Fabriqué avec 💜</footer>
+</div>
+
+<script>
+// État de l'application
+let app = {
+  coins: 0,
+  worlds: [],
+  currentWorld: null,
+  game: null
+};
+
+// Charger les mondes depuis localStorage
+function loadWorlds() {
+  const stored = localStorage.getItem('dreamverseWorlds');
+  if (stored) {
+    app.worlds = JSON.parse(stored);
+  } else {
+    app.worlds = [
+      { id: 1, name: "Cybercité Neon", emoji: "🤖", style: "Cyberpunk", mood: "Nuit", desc: "Une mégalopole futuriste scintillante" },
+      { id: 2, name: "Forêt Magique", emoji: "🏰", style: "Fantastique", mood: "Jour", desc: "Un ancien royaume enchanté" },
+      { id: 3, name: "Station Spatiale", emoji: "🚀", style: "Spatial", mood: "Nuit", desc: "Une base extraterrestre mystérieuse" }
+    ];
+  }
+  renderWorlds();
+}
+
+// Afficher/Masquer les vues
+function showView(viewName) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.getElementById(viewName).classList.add('active');
+  
+  document.querySelectorAll('nav button').forEach(btn => btn.classList.remove('active'));
+  document.querySelector(`[data-view="${viewName}"]`).classList.add('active');
+
+  if (viewName === 'game' && app.currentWorld) {
+    setTimeout(() => {
+      if (document.getElementById('gameCanvas')) {
+        if (!app.game) {
+          app.game = new PongGame('gameCanvas');
+        }
+        app.game.start();
+      }
+    }, 100);
+  }
+}
+
+// Sélectionner une option
+function selectChoice(element, group) {
+  document.querySelectorAll(`#${group} .choice`).forEach(c => c.classList.remove('selected'));
+  element.classList.add('selected');
+}
+
+// Créer un monde
+function createWorld() {
+  const name = document.getElementById('worldName').value;
+  const desc = document.getElementById('worldDesc').value;
+  const style = document.querySelector('#styles .choice.selected').dataset.value;
+  const mood = document.querySelector('#moods .choice.selected').dataset.value;
+  
+  if (!name) {
+    alert('Donne un nom à ton monde!');
+    return;
+  }
+
+  const emojis = { 'Fantastique': '🏰', 'Cyberpunk': '🤖', 'Spatial': '🚀', 'Horreur': '👻' };
+  const world = {
+    id: Date.now(),
+    name: name,
+    emoji: emojis[style] || '🌍',
+    style: style,
+    mood: mood,
+    desc: desc
+  };
+
+  app.worlds.push(world);
+  localStorage.setItem('dreamverseWorlds', JSON.stringify(app.worlds));
+  
+  document.getElementById('worldName').value = '';
+  document.getElementById('worldDesc').value = '';
+  
+  showView('explore');
+}
+
+// Afficher les mondes
+function renderWorlds() {
+  const container = document.getElementById('worldsList');
+  container.innerHTML = app.worlds.map(w => `
+    <div class="world">
+      <div>
+        <div class="emoji">${w.emoji}</div>
+        <h3>${w.name}</h3>
+        <p>${w.desc || 'Un univers fantastique à explorer'}</p>
+      </div>
+      <div class="actions" style="margin:0">
+        <button class="secondary" onclick="loadWorld(${w.id})">🎮 Jouer</button>
+        <button class="secondary" onclick="deleteWorld(${w.id})">🗑️ Supprimer</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+// Charger un monde et lancer le jeu
+function loadWorld(id) {
+  app.currentWorld = app.worlds.find(w => w.id === id);
+  if (app.currentWorld) {
+    document.getElementById('gameWorldName').textContent = app.currentWorld.name;
+    document.getElementById('gamePrompt').style.display = 'none';
+    document.getElementById('gameWrap').style.display = 'block';
+    showView('game');
+  }
+}
+
+// Supprimer un monde
+function deleteWorld(id) {
+  if (confirm('Supprimer ce monde?')) {
+    app.worlds = app.worlds.filter(w => w.id !== id);
+    localStorage.setItem('dreamverseWorlds', JSON.stringify(app.worlds));
+    renderWorlds();
+  }
+}
+
+// ========== JEU PONG ==========
+class PongGame {
+  constructor(canvasId) {
+    this.canvas = document.getElementById(canvasId);
+    this.ctx = this.canvas.getContext('2d');
+    
+    // Adapter la taille du canvas
+    this.canvas.width = this.canvas.offsetWidth;
+    this.canvas.height = this.canvas.offsetHeight;
+    
+    this.width = this.canvas.width;
+    this.height = this.canvas.height;
+    
+    // Raquettes
+    this.paddleWidth = 10;
+    this.paddleHeight = 80;
+    this.paddleSpeed = 6;
+    
+    this.leftPaddle = { x: 20, y: this.height / 2 - this.paddleHeight / 2, width: this.paddleWidth, height: this.paddleHeight, dy: 0 };
+    this.rightPaddle = { x: this.width - 30, y: this.height / 2 - this.paddleHeight / 2, width: this.paddleWidth, height: this.paddleHeight, dy: 0 };
+    
+    // Balle
+    this.ball = { x: this.width / 2, y: this.height / 2, radius: 6, dx: 5, dy: 5 };
+    
+    // Scores
+    this.leftScore = 0;
+    this.rightScore = 0;
+    
+    // Clavier
+    this.keys = {};
+    this.setupControls();
+    
+    this.running = false;
+  }
+  
+  setupControls() {
+    window.addEventListener('keydown', (e) => {
+      this.keys[e.key] = true;
+    });
+    window.addEventListener('keyup', (e) => {
+      this.keys[e.key] = false;
+    });
+    
+    // Contrôle à la souris
+    this.canvas.addEventListener('mousemove', (e) => {
+      const rect = this.canvas.getBoundingClientRect();
+      const mouseY = e.clientY - rect.top;
+      this.leftPaddle.y = mouseY - this.paddleHeight / 2;
+      this.leftPaddle.y = Math.max(0, Math.min(this.height - this.paddleHeight, this.leftPaddle.y));
+    });
+  }
+  
+  start() {
+    this.running = true;
+    this.loop();
+  }
+  
+  update() {
+    // Joueur (flèches haut/bas)
+    if (this.keys['ArrowUp']) {
+      this.leftPaddle.y = Math.max(0, this.leftPaddle.y - this.paddleSpeed);
+    }
+    if (this.keys['ArrowDown']) {
+      this.leftPaddle.y = Math.min(this.height - this.paddleHeight, this.leftPaddle.y + this.paddleSpeed);
+    }
+    
+    // IA pour la raquette droite
+    const rightCenter = this.rightPaddle.y + this.paddleHeight / 2;
+    if (rightCenter < this.ball.y - 35) {
+      this.rightPaddle.y = Math.min(this.height - this.paddleHeight, this.rightPaddle.y + this.paddleSpeed);
+    } else if (rightCenter > this.ball.y + 35) {
+      this.rightPaddle.y = Math.max(0, this.rightPaddle.y - this.paddleSpeed);
+    }
+    
+    // Mouvement de la balle
+    this.ball.x += this.ball.dx;
+    this.ball.y += this.ball.dy;
+    
+    // Collision avec haut/bas
+    if (this.ball.y - this.ball.radius < 0 || this.ball.y + this.ball.radius > this.height) {
+      this.ball.dy = -this.ball.dy;
+      this.ball.y = Math.max(this.ball.radius, Math.min(this.height - this.ball.radius, this.ball.y));
+    }
+    
+    // Collision avec raquettes
+    if (this.ball.x - this.ball.radius < this.leftPaddle.x + this.leftPaddle.width &&
+        this.ball.y > this.leftPaddle.y &&
+        this.ball.y < this.leftPaddle.y + this.leftPaddle.height) {
+      this.ball.dx = Math.abs(this.ball.dx);
+      this.ball.x = this.leftPaddle.x + this.leftPaddle.width + this.ball.radius;
+    }
+    
+    if (this.ball.x + this.ball.radius > this.rightPaddle.x &&
+        this.ball.y > this.rightPaddle.y &&
+        this.ball.y < this.rightPaddle.y + this.rightPaddle.height) {
+      this.ball.dx = -Math.abs(this.ball.dx);
+      this.ball.x = this.rightPaddle.x - this.ball.radius;
+    }
+    
+    // Scoring
+    if (this.ball.x < 0) {
+      this.rightScore++;
+      this.resetBall();
+    }
+    if (this.ball.x > this.width) {
+      this.leftScore++;
+      this.resetBall();
+    }
+    
+    document.getElementById('gameScore').textContent = this.leftScore;
+  }
+  
+  resetBall() {
+    this.ball.x = this.width / 2;
+    this.ball.y = this.height / 2;
+    this.ball.dx = (Math.random() > 0.5 ? 1 : -1) * 5;
+    this.ball.dy = (Math.random() - 0.5) * 6;
+  }
+  
+  draw() {
+    // Fond
+    this.ctx.fillStyle = '#050914';
+    this.ctx.fillRect(0, 0, this.width, this.height);
+    
+    // Ligne du centre
+    this.ctx.strokeStyle = '#334166';
+    this.ctx.setLineDash([10, 10]);
+    this.ctx.beginPath();
+    this.ctx.moveTo(this.width / 2, 0);
+    this.ctx.lineTo(this.width / 2, this.height);
+    this.ctx.stroke();
+    this.ctx.setLineDash([]);
+    
+    // Raquettes
+    this.ctx.fillStyle = '#7c5cff';
+    this.ctx.fillRect(this.leftPaddle.x, this.leftPaddle.y, this.leftPaddle.width, this.leftPaddle.height);
+    
+    this.ctx.fillStyle = '#22d3ee';
+    this.ctx.fillRect(this.rightPaddle.x, this.rightPaddle.y, this.rightPaddle.width, this.rightPaddle.height);
+    
+    // Balle
+    this.ctx.fillStyle = '#fff';
+    this.ctx.beginPath();
+    this.ctx.arc(this.ball.x, this.ball.y, this.ball.radius, 0, Math.PI * 2);
+    this.ctx.fill();
+  }
+  
+  loop() {
+    this.update();
+    this.draw();
+    if (this.running) {
+      requestAnimationFrame(() => this.loop());
+    }
+  }
+}
+
+// Initialiser l'app
+document.addEventListener('DOMContentLoaded', () => {
+  loadWorlds();
+});
+</script>
+</body>
+</html>
